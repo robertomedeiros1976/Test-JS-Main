@@ -1,66 +1,88 @@
+type WinningCombinationsResult = [number, number[]][];
 
-type WinningCombinationsResult = [number, number[]];
+function call(lines: number[]): WinningCombinationsResult {
+	let paySymbol = isFirstPayingSymbol(lines);
+	// Just to store the current index
+	let currentIndexSequence: number[] = [];
+	// Indexes positions of the zeros in the sequence line
+	let zeroPositions: number[] = [];
+	let result: WinningCombinationsResult = [];
 
-function call(lines: number[]): WinningCombinationsResult[] {
-  const result: WinningCombinationsResult[] = [];
-  const wild = 0;
-  const payingSymbols = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  const noPayngSymbols = new Set([10, 11, 12, 13, 14, 15]);
+	// Setting pay sequence to 0 if there are no paying symbols in the entire line
+	if (paySymbol === -1) {
+		paySymbol = 0;
+	}
 
-  let currentSymbol: number | null = null;
-  let currentCombination: number[] = [];
-  let zeroPositions: number[] = [];
+	lines.forEach((lineNumberValue: number, index: number) => {
+		if (lineNumberValue > 9) {
+			VerifyNonPayingSymbol();
+			return;
+		}
 
-  for (let i = 0; i < lines.length; i++) {
-    const symbol = lines[i];
+		if (lineNumberValue === 0) {
+			isSpecialSymbol(index);
+			return;
+		}
 
-    // Se estamos começando ou continuando uma sequência válida
-    if (noPayngSymbols.has(symbol) === false) {
-      
-      if (symbol === wild || (currentSymbol === null || symbol === currentSymbol || currentSymbol === wild)) {
-        currentCombination.push(i);
-  
-        if (currentSymbol === null && symbol !== wild) {
-          currentSymbol = symbol; // Definimos o símbolo atual como o primeiro que encontramos
-        }
-  
-        if (symbol === wild) {
-          zeroPositions.push(i);
-        }
-      } else {
-        // Verifica se uma combinação anterior é válida
-        if (currentCombination.length >= 3 && currentSymbol !== null && payingSymbols.has(currentSymbol)) {
-          result.push([currentSymbol, [...currentCombination]]);
-        }
-        
-        // Reinicia a contagem
-        currentSymbol = symbol !== wild ? symbol : null;
-        currentCombination = symbol === wild ? currentCombination : [i]
-      }
-    }
-  }
+		if (lineNumberValue !== paySymbol) {
+			isDifferentSymbol(index, lineNumberValue);
+			return;
+		}
 
-  // Verifica a última combinação
-  if (currentSymbol !== null && payingSymbols.has(currentSymbol))
-  {
-    if (result.length > 0) {
-      if (currentCombination.length > 0 && zeroPositions.length > 0) {            
-        const filtering =  zeroPositions.filter(f => !result[result.length - 1][1].includes(f));    
-        const eliminated = filtering.filter(f => !currentCombination.includes(f));    
-        result.push([currentSymbol, [...eliminated, ...currentCombination]]);
-                
-      } else if (currentCombination.length >= 3) {
-        result.push([currentSymbol, [...currentCombination]]);
-      }
-    } 
-    
-  }
+		currentIndexSequence.push(index);
+		zeroPositions = [];
+	});
 
-  if (currentSymbol === null && currentCombination.length > 0) {
-    result.push([0, [...currentCombination]]);
-  } 
+	// Verifying the last sequence
+	if (currentIndexSequence.length >= 3) {
+		result.push([paySymbol, currentIndexSequence]);
+	}
 
-  return result.length > 0 ? result : [];
+	return result;
+
+	function VerifyNonPayingSymbol() {		
+		if (currentIndexSequence.length >= 3) {
+			result.push([paySymbol, currentIndexSequence]);
+		}
+		// Restart variables
+		paySymbol = -1;
+		currentIndexSequence = [];
+		zeroPositions = [];
+	}
+
+	function isSpecialSymbol(index: number) {
+		currentIndexSequence.push(index);
+		zeroPositions.push(index);
+	}
+
+	function isDifferentSymbol(
+		index: number,
+		value: number,
+	) {		
+		if (paySymbol === -1) {
+			paySymbol = value;
+			currentIndexSequence = zeroPositions;
+			zeroPositions = [];
+			currentIndexSequence.push(index);
+		} else {		
+			if (currentIndexSequence.length >= 3) {
+				result.push([paySymbol, currentIndexSequence]);
+			}
+			paySymbol = value;
+			currentIndexSequence = zeroPositions;
+			zeroPositions = [];
+			currentIndexSequence.push(index);
+		}
+	}
 }
-export const WinningCombinations = { call };
 
+function isFirstPayingSymbol(lines: number[]): number {
+	for (const value of lines) {
+		if (value <= 9 && value >= 1) {
+			return value;
+		}
+	}
+	return -1; 
+}
+
+export const WinningCombinations = { call };

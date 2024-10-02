@@ -80,25 +80,24 @@ const slotMachineCadences: RoundsCadences = { roundOne: [], roundTwo: [], roundT
  * @param symbols Array<SlotCoordinate> positions of the special symbols. Example: [{ column: 0, row: 2 }, { column: 2, row: 3 }]
  * @returns SlotCadence Array of numbers representing the slot machine stop cadence.
  */
-export function slotCadence(symbols: Array<SlotCoordinate>): SlotCadence {
-  // Determines the number of special symbols present in the given coordinates.
-  const specialSymbolCount = symbols.length;
-  const cadence = new Array(anticipatorConfig.columnSize).fill(anticipatorConfig.defaultCadence);
+export default function slotCadence(symbols: Array<SlotCoordinate>): SlotCadence {  
+  const cadence: number[] = [0];
+  const symbolsIndex = new Set(symbols.map((element) => element.column));
+  let previous = 0;
+  let symbolsCount = symbolsIndex.has(0) ? 1 : 0;
 
-  /**
-   * If the number of special symbols is greater than or equal to the minimum required, proceed with anticipation.
-   */
-  if (specialSymbolCount >= anticipatorConfig.minToAnticipate) {
-    // Identify first and last special symbol indices: Find the column indices of the first and last special symbols.
-    const firstSpecialSymbolIndex = symbols[0].column;
-    const lastSpecialSymbolIndex = symbols[specialSymbolCount - 1].column;
 
-    for (let i = firstSpecialSymbolIndex; i <= lastSpecialSymbolIndex; i++) {
-      /**
-       * Set cadence for anticipation: Iterate through the columns from the first to the last special symbol and set their cadence to the anticipation cadence.
-       */
-      cadence[i] = anticipatorConfig.anticipateCadence;
+  for (let i = 0; i < anticipatorConfig.columnSize - 1; i++) {
+    let current;
+    if (symbolsCount >= anticipatorConfig.minToAnticipate && symbolsCount < anticipatorConfig.maxToAnticipate) {
+      current = previous + anticipatorConfig.anticipateCadence;
+    } else {
+      current =  previous + anticipatorConfig.defaultCadence;
     }
+
+    previous = current;
+    cadence.push(current);
+    if (symbolsIndex.has(i)) symbolsCount++;
   }
 
   return cadence;
@@ -118,3 +117,5 @@ function handleCadences(rounds: RoundsSymbols): RoundsCadences {
 }
 
 console.log('CADENCES: ', handleCadences(gameRounds));
+
+export { handleCadences };
